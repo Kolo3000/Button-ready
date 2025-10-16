@@ -1,11 +1,11 @@
 // ========================================================================
-// 1. IMPORT BIBLIOTEK Z PEŁNYCH ADRESÓW URL (CDN) - POPRAWKA
+// 1. IMPORT BIBLIOTEK Z PEŁNYCH ADRESÓW URL (CDN)
 // ========================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
 import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 
 // ========================================================================
-// 2. TWOJA KONFIGURACJA FIREBASE - pozostaje bez zmian
+// 2. TWOJA KONFIGURACJA FIREBASE
 // ========================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAporL0p4oYVIoZ0Ue0DsxCYWemgH8FphE",
@@ -42,7 +42,7 @@ const playerStatus = document.getElementById('player-status');
 const playerIdDisplay = document.getElementById('player-id-display');
 
 // ========================================================================
-// 4. LOGIKA APLIKACJI - pozostaje bez zmian
+// 4. LOGIKA APLIKACJI
 // ========================================================================
 function showScreen(screenToShow) {
     screens.forEach(screen => screen.classList.remove('active'));
@@ -57,9 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('game');
     const role = params.get('role');
-    const playerId = localStorage.getItem('playerId-' + gameId);
-
+    
     if (gameId) {
+        const playerId = localStorage.getItem('playerId-' + gameId);
         if (role === 'host') {
             initHostView(gameId);
         } else if (playerId) {
@@ -98,7 +98,7 @@ function initHostView(gameId) {
     gameCodeDisplay.textContent = gameId;
 
     const qr = qrcode(0, 'L');
-    qr.addData(window.location.href.replace('&role=host', ''));
+    qr.addData(window.location.origin + window.location.pathname + `?game=${gameId}`);
     qr.make();
     qrCodeContainer.innerHTML = qr.createImgTag(4);
     
@@ -141,16 +141,21 @@ function initPlayerView(gameId, playerId) {
     showScreen(playerScreen);
     playerIdDisplay.textContent = playerId;
     const playerRef = ref(database, 'games/' + gameId + '/players/' + playerId);
-
+    
+    // === POPRAWIONY FRAGMENT KODU ===
     readyBtn.addEventListener('click', () => {
-        get(playerRef.child('ready')).then(snapshot => {
-            set(playerRef.child('ready'), !snapshot.val());
+        // Tworzymy nową, dokładną ścieżkę do pola 'ready'
+        const readyStatusRef = ref(database, `games/${gameId}/players/${playerId}/ready`);
+        get(readyStatusRef).then(snapshot => {
+            // Używamy nowej referencji do ustawienia wartości
+            set(readyStatusRef, !snapshot.val());
         });
     });
+    // ================================
 
     onValue(playerRef, (snapshot) => {
         const player = snapshot.val();
-        if (player.ready) {
+        if (player && player.ready) {
             readyBtn.classList.add('is-ready');
             readyBtn.textContent = 'GOTÓW!';
             playerStatus.textContent = 'Status: Gotowy';
