@@ -1,14 +1,12 @@
 // ========================================================================
-// 1. KONFIGURACJA FIREBASE - Wklej tutaj swoją konfigurację
+// 1. IMPORT BIBLIOTEK Z PEŁNYCH ADRESÓW URL (CDN) - POPRAWKA
 // ========================================================================
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+import { getDatabase, ref, set, onValue, get, update } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// ========================================================================
+// 2. TWOJA KONFIGURACJA FIREBASE - pozostaje bez zmian
+// ========================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyAporL0p4oYVIoZ0Ue0DsxCYWemgH8FphE",
   authDomain: "projekt-alfa-d489c.firebaseapp.com",
@@ -20,20 +18,18 @@ const firebaseConfig = {
   measurementId: "G-2ZK9ZV8FG3"
 };
 
-// Initialize Firebase
+// Inicjalizacja Firebase
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
+const database = getDatabase(app);
 
 // ========================================================================
-// 2. ELEMENTY DOM I ZMIENNE
+// 3. ELEMENTY DOM I ZMIENNE
 // ========================================================================
 const homeScreen = document.getElementById('home-screen');
 const hostScreen = document.getElementById('host-screen');
 const playerScreen = document.getElementById('player-screen');
 const screens = [homeScreen, hostScreen, playerScreen];
 
-// Przyciski i pola
 const createGameBtn = document.getElementById('create-game-btn');
 const joinCodeInput = document.getElementById('join-code-input');
 const joinGameBtn = document.getElementById('join-game-btn');
@@ -46,7 +42,7 @@ const playerStatus = document.getElementById('player-status');
 const playerIdDisplay = document.getElementById('player-id-display');
 
 // ========================================================================
-// 3. LOGIKA APLIKACJI
+// 4. LOGIKA APLIKACJI - pozostaje bez zmian
 // ========================================================================
 function showScreen(screenToShow) {
     screens.forEach(screen => screen.classList.remove('active'));
@@ -57,7 +53,6 @@ function generateCode() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-// Inicjalizacja strony
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const gameId = params.get('game');
@@ -70,10 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (playerId) {
             initPlayerView(gameId, playerId);
         } else {
-            // Nowy gracz w istniejącej grze
             const newPlayerId = 'Player-' + Math.floor(100 + Math.random() * 900);
             localStorage.setItem('playerId-' + gameId, newPlayerId);
-            database.ref('games/' + gameId + '/players/' + newPlayerId).set({ ready: false });
+            set(ref(database, 'games/' + gameId + '/players/' + newPlayerId), { ready: false });
             initPlayerView(gameId, newPlayerId);
         }
     } else {
@@ -81,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Logika przycisków na ekranie startowym
 createGameBtn.addEventListener('click', () => {
     const gameId = generateCode();
     window.location.search = `?game=${gameId}&role=host`;
@@ -90,7 +83,7 @@ createGameBtn.addEventListener('click', () => {
 joinGameBtn.addEventListener('click', () => {
     const gameId = joinCodeInput.value.trim().toUpperCase();
     if (gameId) {
-        database.ref('games/' + gameId).once('value', snapshot => {
+        get(ref(database, 'games/' + gameId)).then(snapshot => {
             if (snapshot.exists()) {
                 window.location.search = `?game=${gameId}`;
             } else {
@@ -100,20 +93,17 @@ joinGameBtn.addEventListener('click', () => {
     }
 });
 
-// Logika dla Hosta
 function initHostView(gameId) {
     showScreen(hostScreen);
     gameCodeDisplay.textContent = gameId;
 
-    // Generowanie kodu QR
     const qr = qrcode(0, 'L');
     qr.addData(window.location.href.replace('&role=host', ''));
     qr.make();
     qrCodeContainer.innerHTML = qr.createImgTag(4);
     
-    // Nasłuchiwanie zmian w statusach graczy
-    const playersRef = database.ref('games/' + gameId + '/players');
-    playersRef.on('value', (snapshot) => {
+    const playersRef = ref(database, 'games/' + gameId + '/players');
+    onValue(playersRef, (snapshot) => {
         const players = snapshot.val();
         playerList.innerHTML = '';
         if (players) {
@@ -133,33 +123,32 @@ function initHostView(gameId) {
     });
 
     resetGameBtn.addEventListener('click', () => {
-        const playersRef = database.ref('games/' + gameId + '/players');
-        playersRef.once('value', (snapshot) => {
+        const playersRef = ref(database, 'games/' + gameId + '/players');
+        get(playersRef).then((snapshot) => {
             const players = snapshot.val();
             if (players) {
                 const updates = {};
                 Object.keys(players).forEach(playerId => {
                     updates[playerId + '/ready'] = false;
                 });
-                playersRef.update(updates);
+                update(playersRef, updates);
             }
         });
     });
 }
 
-// Logika dla Gracza
 function initPlayerView(gameId, playerId) {
     showScreen(playerScreen);
     playerIdDisplay.textContent = playerId;
-    const playerRef = database.ref('games/' + gameId + '/players/' + playerId);
+    const playerRef = ref(database, 'games/' + gameId + '/players/' + playerId);
 
     readyBtn.addEventListener('click', () => {
-        playerRef.child('ready').once('value', snapshot => {
-            playerRef.child('ready').set(!snapshot.val());
+        get(playerRef.child('ready')).then(snapshot => {
+            set(playerRef.child('ready'), !snapshot.val());
         });
     });
 
-    playerRef.on('value', (snapshot) => {
+    onValue(playerRef, (snapshot) => {
         const player = snapshot.val();
         if (player.ready) {
             readyBtn.classList.add('is-ready');
@@ -172,4 +161,3 @@ function initPlayerView(gameId, playerId) {
         }
     });
 }
-
