@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ready Check App</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Firebase Libraries -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-    <!-- QR Code Library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator/qrcode.js"></script>
 </head>
 <body>
@@ -22,6 +18,11 @@
                 <input type="text" id="join-code-input" placeholder="Wpisz kod gry...">
                 <button id="join-game-btn">Dołącz</button>
             </div>
+            <!-- NOWA SEKCJA: Wprowadzanie nazwy gracza -->
+            <div id="player-name-section" class="hidden">
+                <input type="text" id="player-name-input" placeholder="Wpisz swoją nazwę (np. Grupa 1)...">
+                <button id="confirm-join-btn">Zatwierdź i dołącz</button>
+            </div>
         </div>
     </div>
 
@@ -32,11 +33,9 @@
                 <h1>Panel Hosta</h1>
                 <p>Kod gry: <strong id="game-code-display"></strong></p>
                 <div id="qrcode"></div>
-                <p class="qr-info">[translate:Share this code or QR with players]Udostępnij ten kod lub QR graczom</p>
+                <p class="qr-info">Udostępnij ten kod lub QR graczom</p>
             </header>
-            <div id="player-list">
-                <!-- Statusy graczy będą wstawiane tutaj -->
-            </div>
+            <div id="player-list"></div>
             <button id="reset-game-btn">Resetuj gotowość</button>
         </div>
     </div>
@@ -53,4 +52,3 @@
     <script type="module" src="app.js"></script>
 </body>
 </html>
-
