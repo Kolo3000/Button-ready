@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (playerId) {
             initPlayerView(gameId, playerId);
         } else {
-            // Sytuacja, gdy ktoś wchodzi przez QR lub link bez nazwy gracza
             showScreen('home');
             joinCodeInput.value = gameId;
             playerNameSection.classList.remove('hidden');
@@ -88,7 +87,7 @@ joinGameBtn.addEventListener('click', () => {
     if (gameId) {
         get(ref(database, 'games/' + gameId)).then(snapshot => {
             if (snapshot.exists()) {
-                playerNameSection.classList.remove('hidden'); // Pokaż pole na nazwę
+                playerNameSection.classList.remove('hidden');
             } else {
                 alert('Gra o takim kodzie nie istnieje!');
             }
@@ -100,8 +99,15 @@ confirmJoinBtn.addEventListener('click', () => {
     const gameId = joinCodeInput.value.trim().toUpperCase();
     const playerName = playerNameInput.value.trim();
     if (playerName) {
-        set(ref(database, `games/${gameId}/players/${playerName}`), { ready: false });
-        window.location.search = `?game=${gameId}&player=${encodeURIComponent(playerName)}`;
+        // Sprawdzamy, czy gracz o takiej nazwie już istnieje
+        get(ref(database, `games/${gameId}/players/${playerName}`)).then(snapshot => {
+            if (snapshot.exists()) {
+                alert('Gracz o takiej nazwie już istnieje w tej grze. Wybierz inną nazwę.');
+            } else {
+                set(ref(database, `games/${gameId}/players/${playerName}`), { ready: false });
+                window.location.search = `?game=${gameId}&player=${encodeURIComponent(playerName)}`;
+            }
+        });
     } else {
         alert('Proszę wpisać nazwę!');
     }
@@ -111,8 +117,10 @@ function initHostView(gameId) {
     showScreen('host');
     gameCodeDisplay.textContent = gameId;
     
+    // === POPRAWKA: onDisconnect jest teraz tutaj ===
     const gameRef = ref(database, `games/${gameId}`);
-    onDisconnect(gameRef).remove();
+    onDisconnect(gameRef).remove(); // Ustawienie usunięcia gry po rozłączeniu hosta.
+    // ============================================
     
     const qr = qrcode(0, 'L');
     qr.addData(`${window.location.origin}${window.location.pathname}?game=${gameId}`);
@@ -160,7 +168,7 @@ function initPlayerView(gameId, playerId) {
             alert("Host zakończył grę.");
             window.location.href = window.location.pathname;
         } else {
-            const player = snapshot.val().players?.[playerId];
+            const player = snapshot.val().players?.[decodeURIComponent(playerId)];
             if (player && player.ready) {
                 readyBtn.classList.add('is-ready');
                 readyBtn.textContent = 'GOTÓW!';
