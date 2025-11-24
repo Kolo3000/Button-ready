@@ -99,15 +99,35 @@ confirmJoinBtn.addEventListener('click', () => {
     const gameId = joinCodeInput.value.trim().toUpperCase();
     const playerName = playerNameInput.value.trim();
     if (playerName) {
+        confirmJoinBtn.disabled = true; // Zablokuj przycisk
+        confirmJoinBtn.textContent = 'Dołączanie...';
+
         // Sprawdzamy, czy gracz o takiej nazwie już istnieje
-        get(ref(database, `games/${gameId}/players/${playerName}`)).then(snapshot => {
-            if (snapshot.exists()) {
-                alert('Gracz o takiej nazwie już istnieje w tej grze. Wybierz inną nazwę.');
-            } else {
-                set(ref(database, `games/${gameId}/players/${playerName}`), { ready: false });
-                window.location.search = `?game=${gameId}&player=${encodeURIComponent(playerName)}`;
-            }
-        });
+        get(ref(database, `games/${gameId}/players/${playerName}`))
+            .then(snapshot => {
+                if (snapshot.exists()) {
+                    alert('Gracz o takiej nazwie już istnieje w tej grze. Wybierz inną nazwę.');
+                    confirmJoinBtn.disabled = false;
+                    confirmJoinBtn.textContent = 'Zatwierdź i dołącz';
+                } else {
+                    set(ref(database, `games/${gameId}/players/${playerName}`), { ready: false })
+                        .then(() => {
+                            window.location.search = `?game=${gameId}&player=${encodeURIComponent(playerName)}`;
+                        })
+                        .catch((error) => {
+                            console.error("Błąd zapisu:", error);
+                            alert("Wystąpił błąd podczas dołączania. Spróbuj ponownie.");
+                            confirmJoinBtn.disabled = false;
+                            confirmJoinBtn.textContent = 'Zatwierdź i dołącz';
+                        });
+                }
+            })
+            .catch((error) => {
+                console.error("Błąd odczytu:", error);
+                alert("Wystąpił błąd. Sprawdź połączenie.");
+                confirmJoinBtn.disabled = false;
+                confirmJoinBtn.textContent = 'Zatwierdź i dołącz';
+            });
     } else {
         alert('Proszę wpisać nazwę!');
     }
