@@ -7,6 +7,7 @@
     --ready-color: #28a745;
     --not-ready-color: #dc3545;
 }
+
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -17,9 +18,11 @@ body {
     align-items: center;
     min-height: 100vh;
 }
+
 .screen { display: none; }
 .screen.active { display: block; }
-.hidden { display: none !important; } /* Używamy !important, aby nadpisać inne style */
+.hidden { display: none !important; }
+
 .container {
     background-color: var(--primary-color);
     padding: 2rem;
@@ -28,6 +31,7 @@ body {
     max-width: 400px;
     width: 90%;
 }
+
 button {
     cursor: pointer;
     border: none;
@@ -36,9 +40,19 @@ button {
     font-size: 1rem;
     margin-top: 1rem;
     width: 100%;
+    transition: all 0.3s ease;
 }
-.btn-primary { background-color: var(--accent-color); color: white; }
-.join-section { margin-top: 1.5rem; display: flex; }
+
+.btn-primary { 
+    background-color: var(--accent-color); 
+    color: white; 
+}
+
+.join-section { 
+    margin-top: 1.5rem; 
+    display: flex; 
+}
+
 input[type="text"] {
     flex-grow: 1;
     padding: 0.75rem;
@@ -47,69 +61,100 @@ input[type="text"] {
     color: var(--text-color);
     border-radius: 4px 0 0 4px;
 }
-#join-game-btn { background-color: #6c757d; color: white; border-radius: 0 4px 4px 0; margin-top: 0; width: auto; }
 
-/* === POPRAWKA ODSTĘPU === */
+#join-game-btn { 
+    background-color: #6c757d; 
+    color: white; 
+    border-radius: 0 4px 4px 0; 
+    margin-top: 0; 
+    width: auto; 
+}
+
 #player-name-section {
-    margin-top: 20px; /* Zwiększony odstęp od góry */
+    margin-top: 20px;
 }
+
 #player-name-input {
-    width: 100%; /* Pełna szerokość pola na nazwę */
-    box-sizing: border-box; /* Aby padding nie rozszerzał elementu */
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 4px;
 }
+
 #confirm-join-btn {
-    width: 100%; /* Pełna szerokość przycisku */
-}
-/* ========================= */
-
-#game-code-display { background-color: #333; padding: 0.5rem; border-radius: 4px; font-size: 1.5rem; letter-spacing: 2px; }
-#qrcode { margin: 1rem auto; background-color: white; padding: 10px; width: fit-content; }
-.qr-info { font-size: 0.8rem; color: #aaa; }
-#player-list { margin: 2rem 0; }
-.player-status-card { display: flex; justify-content: space-between; align-items: center; background-color: #333; padding: 1rem; margin-bottom: 0.5rem; border-radius: 4px; }
-.status-dot { width: 20px; height: 20px; border-radius: 50%; background-color: var(--not-ready-color); }
-.status-dot.ready { background-color: var(--ready-color); }
-.player-container { padding-top: 4rem; padding-bottom: 4rem; }
-.btn-ready { width: 200px; height: 200px; border-radius: 50%; font-size: 2.5rem; font-weight: bold; background-color: var(--not-ready-color); color: white; transition: background-color 0.3s; }
-.btn-ready.is-ready { background-color: var(--ready-color); }
-#player-status { margin-top: 2rem; font-size: 1.2rem; }
-
-/* Przycisk zakończenia gry */
-.btn.danger {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white;
+    width: 100%;
 }
 
-.btn.danger:hover {
-    background: linear-gradient(135deg, #c0392b, #a93226);
-    transform: scale(1.05);
+#game-code-display { 
+    background-color: #333; 
+    padding: 0.5rem; 
+    border-radius: 4px; 
+    font-size: 1.5rem; 
+    letter-spacing: 2px; 
 }
 
-/* Przycisk usuwania gracza */
-.remove-player-btn {
-    background: #e74c3c;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    font-size: 12px;
-    margin-left: 10px;
-    opacity: 0.7;
-    transition: opacity 0.3s;
+#qrcode { 
+    margin: 1rem auto; 
+    background-color: white; 
+    padding: 10px; 
+    width: fit-content; 
 }
 
-.remove-player-btn:hover {
-    opacity: 1;
+.qr-info { 
+    font-size: 0.8rem; 
+    color: #aaa; 
 }
 
-.player-status-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+#player-list { 
+    margin: 2rem 0; 
 }
 
+.player-status-card { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background-color: #333; 
+    padding: 1rem; 
+    margin-bottom: 0.5rem; 
+    border-radius: 4px; 
+}
+
+.status-dot { 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    background-color: var(--not-ready-color); 
+}
+
+.status-dot.ready { 
+    background-color: var(--ready-color); 
+}
+
+.player-container { 
+    padding-top: 4rem; 
+    padding-bottom: 4rem; 
+}
+
+.btn-ready { 
+    width: 200px; 
+    height: 200px; 
+    border-radius: 50%; 
+    font-size: 2.5rem; 
+    font-weight: bold; 
+    background-color: var(--not-ready-color); 
+    color: white; 
+    transition: background-color 0.3s; 
+}
+
+.btn-ready.is-ready { 
+    background-color: var(--ready-color); 
+}
+
+#player-status { 
+    margin-top: 2rem; 
+    font-size: 1.2rem; 
+}
+
+/* ========== KONTROLKI HOSTA ========== */
 .host-controls {
     display: flex;
     gap: 10px;
@@ -118,3 +163,27 @@ input[type="text"] {
     justify-content: center;
 }
 
+.host-controls button {
+    width: auto;
+    padding: 12px 20px;
+}
+
+#reset-game-btn {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+#reset-game-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Przycisk zakończenia gry */
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: scale(1.05);
+}
