@@ -2,7 +2,7 @@
 // 1. IMPORT BIBLIOTEK Z PEŁNYCH ADRESÓW URL (CDN)
 // ========================================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-import { getDatabase, ref, set, onValue, get, update, onDisconnect } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+import { getDatabase, ref, set, onValue, get, update, remove } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
 
 // ========================================================================
 // 2. TWOJA KONFIGURACJA FIREBASE
@@ -39,6 +39,7 @@ const gameCodeDisplay = document.getElementById('game-code-display');
 const qrCodeContainer = document.getElementById('qrcode');
 const playerList = document.getElementById('player-list');
 const resetGameBtn = document.getElementById('reset-game-btn');
+const endGameBtn = document.getElementById('end-game-btn'); // NOWY PRZYCISK
 const readyBtn = document.getElementById('ready-btn');
 const playerStatus = document.getElementById('player-status');
 const playerIdDisplay = document.getElementById('player-id-display');
@@ -99,7 +100,6 @@ confirmJoinBtn.addEventListener('click', () => {
     const gameId = joinCodeInput.value.trim().toUpperCase();
     const playerName = playerNameInput.value.trim();
     if (playerName) {
-        // Sprawdzamy, czy gracz o takiej nazwie już istnieje
         get(ref(database, `games/${gameId}/players/${playerName}`)).then(snapshot => {
             if (snapshot.exists()) {
                 alert('Gracz o takiej nazwie już istnieje w tej grze. Wybierz inną nazwę.');
@@ -117,10 +117,8 @@ function initHostView(gameId) {
     showScreen('host');
     gameCodeDisplay.textContent = gameId;
     
-    // === POPRAWKA: onDisconnect jest teraz tutaj ===
-    const gameRef = ref(database, `games/${gameId}`);
-    onDisconnect(gameRef).remove(); // Ustawienie usunięcia gry po rozłączeniu hosta.
-    // ============================================
+    // ❌ USUNIĘTO onDisconnect - gra NIE jest usuwana automatycznie
+    // Gra kończy się TYLKO gdy host kliknie przycisk "Zakończ grę"
     
     const qr = qrcode(0, 'L');
     qr.addData(`${window.location.origin}${window.location.pathname}?game=${gameId}`);
@@ -135,14 +133,30 @@ function initHostView(gameId) {
             Object.keys(players).forEach(playerId => {
                 const playerCard = document.createElement('div');
                 playerCard.className = 'player-status-card';
-                playerCard.innerHTML = `<span>${playerId}</span><div class="status-dot ${players[playerId].ready ? 'ready' : ''}"></div>`;
+                playerCard.innerHTML = `
+                    <span>${playerId}</span>
+                    <div class="status-dot ${players[playerId].ready ? 'ready' : ''}"></div>
+                    <button class="remove-player-btn" data-player="${playerId}" title="Usuń gracza">✕</button>
+                `;
                 playerList.appendChild(playerCard);
+            });
+            
+            // Dodaj event listenery do przycisków usuwania
+            document.querySelectorAll('.remove-player-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const playerToRemove = btn.dataset.player;
+                    if (confirm(`Czy na pewno chcesz usunąć gracza "${playerToRemove}"?`)) {
+                        remove(ref(database, `games/${gameId}/players/${playerToRemove}`));
+                    }
+                });
             });
         } else {
             playerList.innerHTML = '<p>Czekam na graczy...</p>';
         }
     });
 
+    // Reset gotowości wszystkich graczy
     resetGameBtn.addEventListener('click', () => {
         const playersRef = ref(database, `games/${gameId}/players`);
         get(playersRef).then((snapshot) => {
@@ -155,21 +169,44 @@ function initHostView(gameId) {
             }
         });
     });
+
+    // 🆕 NOWY: Przycisk zakończenia gry - jedyny sposób na usunięcie gry
+    endGameBtn.addEventListener('click', () => {
+        if (confirm('Czy na pewno chcesz zakończyć grę? Wszyscy gracze zostaną rozłączeni.')) {
+            remove(ref(database, `games/${gameId}`)).then(() => {
+                window.location.href = window.location.pathname;
+            });
+        }
+    });
 }
 
 function initPlayerView(gameId, playerId) {
     showScreen('player');
-    playerIdDisplay.textContent = playerId;
+    playerIdDisplay.textContent = decodeURIComponent(playerId);
     
     const gameRef = ref(database, `games/${gameId}`);
     
+    // ❌ USUNIĘTO onDisconnect dla gracza
+    // Gracz NIE jest usuwany gdy zamknie przeglądarkę/telefon
+    // Gracz jest usuwany TYLKO gdy host go usunie lub zakończy grę
+    
     onValue(gameRef, (snapshot) => {
         if (!snapshot.exists()) {
+            // Gra została zakończona przez hosta
             alert("Host zakończył grę.");
             window.location.href = window.location.pathname;
         } else {
-            const player = snapshot.val().players?.[decodeURIComponent(playerId)];
-            if (player && player.ready) {
+            const decodedPlayerId = decodeURIComponent(playerId);
+            const player = snapshot.val().players?.[decodedPlayerId];
+            
+            if (!player) {
+                // Gracz został usunięty przez hosta
+                alert("Zostałeś usunięty z gry przez hosta.");
+                window.location.href = window.location.pathname;
+                return;
+            }
+            
+            if (player.ready) {
                 readyBtn.classList.add('is-ready');
                 readyBtn.textContent = 'GOTÓW!';
                 playerStatus.textContent = 'Status: Gotowy';
@@ -181,11 +218,9 @@ function initPlayerView(gameId, playerId) {
         }
     });
 
-    const playerDisconnectRef = ref(database, `games/${gameId}/players/${playerId}`);
-    onDisconnect(playerDisconnectRef).remove();
-
     readyBtn.addEventListener('click', () => {
-        const readyStatusRef = ref(database, `games/${gameId}/players/${playerId}/ready`);
+        const decodedPlayerId = decodeURIComponent(playerId);
+        const readyStatusRef = ref(database, `games/${gameId}/players/${decodedPlayerId}/ready`);
         get(readyStatusRef).then(snapshot => {
             set(readyStatusRef, !snapshot.val());
         });
