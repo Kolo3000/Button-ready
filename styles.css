@@ -73,3 +73,48 @@ input[type="text"] {
 .btn-ready { width: 200px; height: 200px; border-radius: 50%; font-size: 2.5rem; font-weight: bold; background-color: var(--not-ready-color); color: white; transition: background-color 0.3s; }
 .btn-ready.is-ready { background-color: var(--ready-color); }
 #player-status { margin-top: 2rem; font-size: 1.2rem; }
+
+/* Przycisk zakończenia gry */
+.btn.danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.btn.danger:hover {
+    background: linear-gradient(135deg, #c0392b, #a93226);
+    transform: scale(1.05);
+}
+
+/* Przycisk usuwania gracza */
+.remove-player-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 10px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.remove-player-btn:hover {
+    opacity: 1;
+}
+
+.player-status-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.host-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
