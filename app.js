@@ -39,7 +39,7 @@ const gameCodeDisplay = document.getElementById('game-code-display');
 const qrCodeContainer = document.getElementById('qrcode');
 const playerList = document.getElementById('player-list');
 const resetGameBtn = document.getElementById('reset-game-btn');
-const endGameBtn = document.getElementById('end-game-btn'); // NOWY PRZYCISK
+const endGameBtn = document.getElementById('end-game-btn');
 const readyBtn = document.getElementById('ready-btn');
 const playerStatus = document.getElementById('player-status');
 const playerIdDisplay = document.getElementById('player-id-display');
@@ -117,9 +117,6 @@ function initHostView(gameId) {
     showScreen('host');
     gameCodeDisplay.textContent = gameId;
     
-    // ❌ USUNIĘTO onDisconnect - gra NIE jest usuwana automatycznie
-    // Gra kończy się TYLKO gdy host kliknie przycisk "Zakończ grę"
-    
     const qr = qrcode(0, 'L');
     qr.addData(`${window.location.origin}${window.location.pathname}?game=${gameId}`);
     qr.make();
@@ -133,23 +130,12 @@ function initHostView(gameId) {
             Object.keys(players).forEach(playerId => {
                 const playerCard = document.createElement('div');
                 playerCard.className = 'player-status-card';
+                // ✅ POPRAWIONE - tylko nazwa i kółko, bez przycisku X
                 playerCard.innerHTML = `
                     <span>${playerId}</span>
                     <div class="status-dot ${players[playerId].ready ? 'ready' : ''}"></div>
-                    <button class="remove-player-btn" data-player="${playerId}" title="Usuń gracza">✕</button>
                 `;
                 playerList.appendChild(playerCard);
-            });
-            
-            // Dodaj event listenery do przycisków usuwania
-            document.querySelectorAll('.remove-player-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const playerToRemove = btn.dataset.player;
-                    if (confirm(`Czy na pewno chcesz usunąć gracza "${playerToRemove}"?`)) {
-                        remove(ref(database, `games/${gameId}/players/${playerToRemove}`));
-                    }
-                });
             });
         } else {
             playerList.innerHTML = '<p>Czekam na graczy...</p>';
@@ -170,7 +156,7 @@ function initHostView(gameId) {
         });
     });
 
-    // 🆕 NOWY: Przycisk zakończenia gry - jedyny sposób na usunięcie gry
+    // Przycisk zakończenia gry
     endGameBtn.addEventListener('click', () => {
         if (confirm('Czy na pewno chcesz zakończyć grę? Wszyscy gracze zostaną rozłączeni.')) {
             remove(ref(database, `games/${gameId}`)).then(() => {
@@ -186,27 +172,15 @@ function initPlayerView(gameId, playerId) {
     
     const gameRef = ref(database, `games/${gameId}`);
     
-    // ❌ USUNIĘTO onDisconnect dla gracza
-    // Gracz NIE jest usuwany gdy zamknie przeglądarkę/telefon
-    // Gracz jest usuwany TYLKO gdy host go usunie lub zakończy grę
-    
     onValue(gameRef, (snapshot) => {
         if (!snapshot.exists()) {
-            // Gra została zakończona przez hosta
             alert("Host zakończył grę.");
             window.location.href = window.location.pathname;
         } else {
             const decodedPlayerId = decodeURIComponent(playerId);
             const player = snapshot.val().players?.[decodedPlayerId];
             
-            if (!player) {
-                // Gracz został usunięty przez hosta
-                alert("Zostałeś usunięty z gry przez hosta.");
-                window.location.href = window.location.pathname;
-                return;
-            }
-            
-            if (player.ready) {
+            if (player && player.ready) {
                 readyBtn.classList.add('is-ready');
                 readyBtn.textContent = 'GOTÓW!';
                 playerStatus.textContent = 'Status: Gotowy';
